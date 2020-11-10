@@ -21,6 +21,13 @@ class CanvasView: UIView {
     private(set) var isPaused = false
     private(set) var isJourneyStarted = false
     
+    //MARK: Enum for bot names (Image files)
+    
+    private enum botNames {
+        static let originalBot = "bot"
+        static let resizedBot = "bot2" /// having pixel : 50 , aspect Ratio : 1 : 1
+    }
+    
     //<#DESCRIPTION#>
     ///It holds the coordinate points from start to end of robot movement. Can be accessed onces robot completes it's movement.
     /// +VE value Represents : X or Y is increased in X or Y Direction in 2D Plane.
@@ -39,7 +46,13 @@ class CanvasView: UIView {
         view.backgroundColor = .black
         return view
     }()
-    
+    private lazy var botImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(named: botNames.originalBot)
+        imageView.tintColor = .black
+        return imageView
+    }()
     private var userInteraction: Bool {
         get {
             isUserInteractionEnabled
@@ -62,6 +75,13 @@ class CanvasView: UIView {
     
     private func setupView() {
         self.backgroundColor = .lightGray
+        self.addSubview(botImageView)
+        NSLayoutConstraint.activate([
+            botImageView.widthAnchor.constraint(equalToConstant: 65),
+            botImageView.heightAnchor.constraint(equalToConstant: 65),
+        ])
+        botImageView.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)
+        botImageView.isHidden = true
     }
     //MARK: - Draw
     
@@ -115,7 +135,7 @@ class CanvasView: UIView {
         isPaused = false
         isJourneyStarted = false
         userInteraction = true
-        robot.removeFromSuperview()
+        botImageView.isHidden = true
         setNeedsDisplay()
     }
     //MARK: - Play
@@ -135,11 +155,11 @@ class CanvasView: UIView {
         isJourneyStarted = true
         onReachingDestination = completionHandler
         robotDirections = []
-        self.addSubview(robot)
-        //TODO: get bot direction here  //getBotDirection(currentPoint: points[0], previousPoint: nil)
+        botImageView.isHidden = false
         robotDirection(currentPoint: points[0], previousPoint: nil)
-        UIView.animate(withDuration: 0.3, animations: {
-            self.robot.center = points[0]
+        UIView.animate(withDuration: 0.2, animations: {
+            self.botImageView.transform = .identity
+            self.botImageView.center = points[0]
         }) { (_) in
             self.moveToPoint(index: 1)
         }
@@ -201,7 +221,12 @@ class CanvasView: UIView {
         }
     }
     //MARK: - Helper Methods
-    
+    private func setupRobotFrame() {
+        NSLayoutConstraint.activate([
+            botImageView.widthAnchor.constraint(equalToConstant: 65),
+            botImageView.heightAnchor.constraint(equalTo: botImageView.widthAnchor, multiplier: 1.0)
+        ])
+    }
     //MARK: 
     private func moveToPoint(index: Int) {
         guard !isPaused else { return }
@@ -211,7 +236,7 @@ class CanvasView: UIView {
         
         UIView.animate(withDuration: 0.2, delay: 0.05, options: .curveLinear, animations: { [weak self] in
             guard let weakSelf = self else { return }
-            weakSelf.robot.center = points[index]
+            weakSelf.botImageView.center = points[index]
         }, completion: { [weak self] _ in
             guard let weakSelf = self else { return }
             if index < points.count - 1 {

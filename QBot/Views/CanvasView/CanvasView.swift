@@ -25,7 +25,10 @@ class CanvasView: UIView {
     
     private enum botNames {
         static let originalBot = "bot"
-        static let resizedBot = "bot2" /// having pixel : 50 , aspect Ratio : 1 : 1
+        /// having pixel : 50 , aspect Ratio : 1 : 1
+        static let resizedBot = "bot2"
+        static let bikeBot = "bike"
+        static let qbot = "qbot"
     }
     
     //<#DESCRIPTION#>
@@ -40,7 +43,7 @@ class CanvasView: UIView {
     
     //MARK: Robot View
     private lazy var robot: UIView = {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 45, height: 45))
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 45, height: 55))
         view.layer.cornerRadius = 22.5
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .black
@@ -49,7 +52,8 @@ class CanvasView: UIView {
     private lazy var botImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(named: botNames.originalBot)
+        imageView.image = UIImage(named: botNames.qbot)
+        imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .black
         return imageView
     }()
@@ -233,21 +237,36 @@ class CanvasView: UIView {
         guard let points = path?.points, points.count > 1 else { return }
         
         robotDirection(currentPoint: points[index], previousPoint: points[index - 1])
-        
-        UIView.animate(withDuration: 0.2, delay: 0.05, options: .curveLinear, animations: { [weak self] in
-            guard let weakSelf = self else { return }
-            weakSelf.botImageView.center = points[index]
-        }, completion: { [weak self] _ in
-            guard let weakSelf = self else { return }
+        UIView.animate(withDuration: 0.1, animations: {
             if index < points.count - 1 {
-                weakSelf.currentPositionIndex = index
-                weakSelf.moveToPoint(index: index + 1)
-            } else {
-                if let completionHandler = weakSelf.onReachingDestination {
-                    completionHandler()
-                }
-                weakSelf.isJourneyStarted = false
+                let xf = points[index + 1].x - 32
+                let yf = points[index + 1].y - 32
+                
+                let xi = points[index].x - 32
+                let yi = points[index].y - 32
+                
+                let xd = xf - xi
+                let yd = yf - yi
+                let cangle = atan2(xd, yd)
+                self.botImageView.transform = CGAffineTransform.init(rotationAngle: (.pi - cangle))
             }
-        })
+        }) { (_) in
+                UIView.animate(withDuration: 0.2, delay: 0.05, options: .curveLinear, animations: { [weak self] in
+                guard let weakSelf = self else { return }
+                weakSelf.botImageView.center = points[index]
+                
+            }, completion: { [weak self] _ in
+                guard let weakSelf = self else { return }
+                if index < points.count - 1 {
+                    weakSelf.currentPositionIndex = index
+                    weakSelf.moveToPoint(index: index + 1)
+                } else {
+                    if let completionHandler = weakSelf.onReachingDestination {
+                        completionHandler()
+                    }
+                    weakSelf.isJourneyStarted = false
+                }
+            })
+        }
     }
 }

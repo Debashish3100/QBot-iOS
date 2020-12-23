@@ -1,2 +1,2 @@
 # QBot-iOS 
-![](qbot.gif)
+![](bot)
